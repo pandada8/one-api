@@ -21,6 +21,8 @@ import (
 	"github.com/songquanpeng/one-api/model"
 	"github.com/songquanpeng/one-api/relay/adaptor/openai"
 	"github.com/songquanpeng/one-api/router"
+
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 //go:embed web/build/*
@@ -30,7 +32,8 @@ func main() {
 	common.Init()
 	logger.SetupLogger()
 	logger.SysLogf("One API %s started", common.Version)
-
+	cleanup := common.InitTracer()
+	defer cleanup()
 	if os.Getenv("GIN_MODE") != gin.DebugMode {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -101,6 +104,9 @@ func main() {
 
 	// Initialize HTTP server
 	server := gin.New()
+
+	server.Use(otelgin.Middleware(common.ServiceName))
+
 	server.Use(gin.Recovery())
 	// This will cause SSE not to work!!!
 	//server.Use(gzip.Gzip(gzip.DefaultCompression))
