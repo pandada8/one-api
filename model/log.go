@@ -25,6 +25,7 @@ type Log struct {
 	PromptTokens      int    `json:"prompt_tokens" gorm:"default:0"`
 	CompletionTokens  int    `json:"completion_tokens" gorm:"default:0"`
 	ChannelId         int    `json:"channel" gorm:"index"`
+	TraceID           string `json:"traceId"`
 	RequestId         string `json:"request_id" gorm:"default:''"`
 	ElapsedTime       int64  `json:"elapsed_time" gorm:"default:0"` // unit is ms
 	IsStream          bool   `json:"is_stream" gorm:"default:false"`
@@ -61,6 +62,7 @@ func RecordLog(ctx context.Context, userId int, logType int, content string) {
 		CreatedAt: helper.GetTimestamp(),
 		Type:      logType,
 		Content:   content,
+		TraceID:   common.GetTraceId(ctx),
 	}
 	recordLogHelper(ctx, log)
 }
