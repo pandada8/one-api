@@ -10,6 +10,8 @@ import (
 	"github.com/songquanpeng/one-api/model"
 	"github.com/songquanpeng/one-api/relay/channeltype"
 	"github.com/songquanpeng/one-api/relay/relaymode"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Meta struct {
@@ -63,4 +65,25 @@ func GetByContext(c *gin.Context) *Meta {
 	}
 	meta.APIType = channeltype.ToAPIType(meta.ChannelType)
 	return &meta
+}
+
+func (m *Meta) CopyToSpan(span trace.Span) {
+	span.SetAttributes(
+		attribute.Int("meta.mode", m.Mode),
+		attribute.Int("meta.channel_type", m.ChannelType),
+		attribute.Int("meta.channel_id", m.ChannelId),
+		attribute.Int("meta.token_id", m.TokenId),
+		attribute.String("meta.token_name", m.TokenName),
+		attribute.Int("meta.user_id", m.UserId),
+		attribute.String("meta.group", m.Group),
+		attribute.String("meta.base_url", m.BaseURL),
+		attribute.String("meta.api_key", m.APIKey),
+		attribute.Int("meta.api_type", m.APIType),
+		attribute.Bool("meta.is_stream", m.IsStream),
+		attribute.String("meta.origin_model_name", m.OriginModelName),
+		attribute.String("meta.actual_model_name", m.ActualModelName),
+		attribute.String("meta.request_url_path", m.RequestURLPath),
+		attribute.String("meta.forced_system_prompt", m.ForcedSystemPrompt),
+		attribute.Int("meta.prompt_tokens", m.PromptTokens),
+	)
 }

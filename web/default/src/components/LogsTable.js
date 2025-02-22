@@ -501,6 +501,7 @@ const LogsTable = () => {
               </>
             )}
             <Table.HeaderCell>{t('log.table.detail')}</Table.HeaderCell>
+            <Table.HeaderCell>TraceID</Table.HeaderCell>
           </Table.Row>
         </Table.Header>
 
@@ -570,6 +571,7 @@ const LogsTable = () => {
                   )}
 
                   <Table.Cell>{renderDetail(log)}</Table.Cell>
+                  <Table.Cell>{log.traceId}</Table.Cell>
                 </Table.Row>
               );
             })}

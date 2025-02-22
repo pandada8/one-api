@@ -8,9 +8,10 @@ import (
 
 func RequestId() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		id := helper.GenRequestID()
+		ctx := c.Request.Context()
+		id := helper.GenRequestID(ctx)
 		c.Set(helper.RequestIdKey, id)
-		ctx := helper.SetRequestID(c.Request.Context(), id)
+		ctx = helper.SetRequestID(ctx, id)
 		c.Request = c.Request.WithContext(ctx)
 		c.Header(helper.RequestIdKey, id)
 		c.Next()

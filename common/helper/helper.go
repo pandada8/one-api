@@ -12,8 +12,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-
 	"github.com/songquanpeng/one-api/common/random"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func OpenBrowser(url string) {
@@ -105,7 +105,11 @@ func IntMax(a int, b int) int {
 	}
 }
 
-func GenRequestID() string {
+func GenRequestID(ctx context.Context) string {
+	span := trace.SpanFromContext(ctx)
+	if span.SpanContext().HasTraceID() {
+		return GetTimeString() + span.SpanContext().TraceID().String()
+	}
 	return GetTimeString() + random.GetRandomNumberString(8)
 }
 

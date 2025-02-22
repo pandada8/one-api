@@ -7,9 +7,11 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/songquanpeng/one-api/common"
+	"github.com/songquanpeng/one-api/common/config"
+
 	"github.com/gin-gonic/gin"
 
-	"github.com/songquanpeng/one-api/common/config"
 	"github.com/songquanpeng/one-api/common/logger"
 	"github.com/songquanpeng/one-api/relay"
 	"github.com/songquanpeng/one-api/relay/adaptor"
@@ -20,10 +22,13 @@ import (
 	"github.com/songquanpeng/one-api/relay/channeltype"
 	"github.com/songquanpeng/one-api/relay/meta"
 	"github.com/songquanpeng/one-api/relay/model"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	ctx := c.Request.Context()
+	span := trace.SpanFromContext(ctx)
 	meta := meta.GetByContext(c)
 	// get & validate textRequest
 	textRequest, err := getAndValidateTextRequest(c, meta.Mode)
@@ -63,6 +68,14 @@ func RelayTextHelper(c *gin.Context) *model.ErrorWithStatusCode {
 	if err != nil {
 		return openai.ErrorWrapper(err, "convert_request_failed", http.StatusInternalServerError)
 	}
+	beforeRequestBody, _ := common.GetRequestBody(c)
+	var afterRequestBody []byte
+	if requestBody == c.Request.Body {
+		afterRequestBody = beforeRequestBody
+	} else {
+		afterRequestBody = requestBody.(*bytes.Buffer).Bytes()
+	}
+	span.AddEvent("rewrite-body", trace.WithAttributes(attribute.String("before", string(beforeRequestBody)), attribute.String("after", string(afterRequestBody))))
 
 	// do request
 	resp, err := adaptor.DoRequest(c, meta, requestBody)

@@ -43,6 +43,7 @@ const (
 
 func recordLogHelper(ctx context.Context, log *Log) {
 	requestId := helper.GetRequestID(ctx)
+	log.TraceID = common.GetTraceId(ctx)
 	log.RequestId = requestId
 	err := LOG_DB.Create(log).Error
 	if err != nil {
