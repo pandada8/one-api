@@ -72,6 +72,16 @@ func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *me
 		req.Header.Set("HTTP-Referer", "https://github.com/songquanpeng/one-api")
 		req.Header.Set("X-Title", "One API")
 	}
+
+	for key, values := range c.Request.Header {
+		if strings.HasPrefix(strings.ToLower(key), "x-dashscope-") {
+			for _, value := range values {
+				fmt.Println("set header", key, value)
+				req.Header.Set(key, value)
+			}
+		}
+	}
+
 	return nil
 }
 
