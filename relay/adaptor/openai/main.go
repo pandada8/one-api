@@ -32,6 +32,8 @@ func StreamHandler(c *gin.Context, resp *http.Response, relayMode int) (*model.E
 
 	common.SetEventStreamHeaders(c)
 
+	thinking_started := false
+
 	doneRendered := false
 	for scanner.Scan() {
 		data := scanner.Text()
@@ -58,6 +60,33 @@ func StreamHandler(c *gin.Context, resp *http.Response, relayMode int) (*model.E
 			if len(streamResponse.Choices) == 0 && streamResponse.Usage == nil {
 				// but for empty choice and no usage, we should not pass it to client, this is for azure
 				continue // just ignore empty choice
+			}
+			if c.GetHeader("X-OpenWebUI-User-Id") != "" {
+				// open webui 不支持 reasoning_content
+				changed := false
+				if len(streamResponse.Choices) > 0 {
+					if streamResponse.Choices[0].Delta.ReasoningContent != nil && streamResponse.Choices[0].Delta.ReasoningContent != "" {
+						streamResponse.Choices[0].Delta.Content = streamResponse.Choices[0].Delta.ReasoningContent.(string)
+						streamResponse.Choices[0].Delta.ReasoningContent = nil
+						if !thinking_started {
+							streamResponse.Choices[0].Delta.Content = "<think>" + streamResponse.Choices[0].Delta.Content.(string)
+							thinking_started = true
+						}
+						changed = true
+
+					} else if thinking_started {
+						streamResponse.Choices[0].Delta.Content = "</think>" + streamResponse.Choices[0].Delta.Content.(string)
+						changed = true
+					}
+					if changed {
+						newResponse, err := json.Marshal(streamResponse)
+						if err != nil {
+							logger.SysError("error marshal: " + err.Error())
+							continue
+						}
+						data = dataPrefix + string(newResponse)
+					}
+				}
 			}
 			render.StringData(c, data)
 			for _, choice := range streamResponse.Choices {
